@@ -4,6 +4,7 @@ require("dotenv").config();
 const cookieParser = require('cookie-parser');
 const corsOption = require('./config/corsOptions');
 const connectDB = require('./config/dbConn');
+const verifyJWT = require("./middleware/verifyJWT");
 const PORT = process.env.PORT || 5000
 
 
@@ -18,7 +19,8 @@ app.use(express.urlencoded({ extended: true }));
 
 
 app.use('/api/v1/auth', require('./routes/authRoutes.js'));
-app.use('/api/v1/user', require('./routes/userRoutes.js'));
+app.use('/api/v1/user', verifyJWT, require('./routes/userRoutes.js'));
+app.use('/api/v1/doc', require('./routes/docRoutes.js'));
 
 
 app.get('/health-check', (req, res) => {
