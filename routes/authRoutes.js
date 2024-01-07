@@ -1,5 +1,6 @@
 const express = require("express");
 const {
+  googleLogin,
   register,
   login,
   logout,
@@ -8,6 +9,7 @@ const {
 
 const router = express.Router();
 
+router.post("/google", googleLogin);
 router.post("/register", register);
 router.post("/login", login);
 router.post("/refresh", refresh);

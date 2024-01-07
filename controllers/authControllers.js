@@ -1,31 +1,46 @@
 const userModel = require("../models/userModel.js");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const { createAccessToken, createRefreshToken } = require("../utils/token.js");
+const oAuth2Client = require("../config/oauth2Client.js");
 
-const createAccessToken = (user) => {
-	return jwt.sign(
-		{
-			"UserInfo": {
-				"userId": user._id,
-				"email": user.email
-			}
-		},
-		process.env.ACCESS_TOKEN_SECRET,
-		{ expiresIn: process.env.ACCESS_TOKEN_EXPIRE }
-	);
-}
+const googleLogin = async (req, res) => {
+	try {
+		const { tokens } = await oAuth2Client.getToken(req.body.code);
+		const data = jwt.decode(tokens.id_token, { complete: true });
 
-const createRefreshToken = (user) => {
-	return jwt.sign(
-		{
-			"UserInfo": {
-				"userId": user._id,
-				"email": user.email
-			}
-		},
-		process.env.REFRESH_TOKEN_SECRET,
-		{ expiresIn: process.env.REFRESH_TOKEN_EXPIRE }
-	);
+		let googleUser = await userModel.findOne({ email: data.payload.email });
+
+		if (!googleUser) {
+			googleUser = new userModel({ 
+				username: data.payload.name,
+				email: data.payload.email,
+				image: data.payload.picture
+			});
+
+			await googleUser.save();
+		}
+
+		const accessToken = createAccessToken(googleUser);
+		const refreshToken = createRefreshToken(googleUser);
+
+		const {...user} = googleUser._doc;
+
+		user.accessToken = accessToken;
+
+		res.cookie('jwt', refreshToken, { 
+			httpOnly: true,
+			maxAge: 7 * 24 * 60 * 60 * 1000,
+			sameSite: 'None',
+			secure: true
+		});
+		
+		return res.status(200).send({ success: true, message: "Google login successfully", user });
+
+	} catch (error) {
+		console.log(error.message);
+		return res.status(500).send({  success: false, message: "Error while google login", error });
+	}
 }
 
 const register = async (req, res) => {
@@ -50,7 +65,6 @@ const register = async (req, res) => {
 		return res.status(201).send({ success: true, message: "User registered successfully!", user: user });
 
 	} catch (error) {
-		console.log(error);
 		return res.status(500).send({ message: "Error in Registration", success: false, error });
 	}
 };
@@ -85,7 +99,7 @@ const login = async (req, res) => {
 		
 		res.cookie('jwt', refreshToken, {
 			httpOnly: true,
-			maxAge: 7 * 24 * 60 * 60 * 1000,
+			maxAge: 2 * 24 * 60 * 60 * 1000,
 			sameSite: 'None',
 			secure: true
 		});
@@ -144,4 +158,4 @@ const logout = (req, res) => {
     return res.status(200).send({ success: true, message: 'Logout successfull' })
 }
 
-module.exports = { register, login, refresh, logout };
+module.exports = { googleLogin, register, login, refresh, logout };
