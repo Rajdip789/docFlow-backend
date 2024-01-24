@@ -1,10 +1,16 @@
 const express = require("express");
 const {
-	createUser
-} = require("../controllers/userControllers.js");
+  createDocController,
+  renameDocController,
+  deleteDocController,
+} = require("../controllers/docControllers.js");
 
 const router = express.Router();
 
-//router.post("/create-docs", createUser);
+router.post("/create-docs", createDocController);
+
+router.put("/rename-docs/:id", renameDocController);
+
+router.delete("/delete-docs/:id", deleteDocController);
 
 module.exports = router;
