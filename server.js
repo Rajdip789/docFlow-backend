@@ -18,7 +18,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use("/api/v1/auth", require("./routes/authRoutes.js"));
 app.use("/api/v1/user", verifyJWT, require("./routes/userRoutes.js"));
-app.use("/api/v1/doc", require("./routes/docRoutes.js"));
+app.use("/api/v1/doc", verifyJWT, require("./routes/docRoutes.js"));
 
 app.get("/health-check", (req, res) => {
   res.send({ success: true, message: "Successfull" });
