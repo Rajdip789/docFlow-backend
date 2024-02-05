@@ -5,4 +5,9 @@ const corsOption = {
 	optionsSuccessStatus: 200,
 };
 
-module.exports = corsOption;
+const corsSocketio = {
+	origin: ["http://localhost:5173"],
+	methods: ["GET", "POST"]
+}
+
+module.exports = { corsOption, corsSocketio };
