@@ -8,6 +8,7 @@ const connectDB = require("./config/dbConn");
 const socketIOSetup = require("./socketIOSetup");
 const verifyJWT = require("./middleware/verifyJWT");
 const { corsOption } = require("./config/corsConfig");
+require('./utils/healthCheck')
 
 const PORT = process.env.PORT || 5000;
 
@@ -23,7 +24,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/api/v1/auth", require("./routes/authRoutes.js"));
 app.use("/api/v1/user", verifyJWT, require("./routes/userRoutes.js"));
 app.use("/api/v1/doc", verifyJWT, require("./routes/docRoutes.js"));
-
+app.get('/api/v1/health-check', (req, res) => res.status(200).send({ success: true, data: "Ok. Health check successful." }))
 
 const server = http.Server(app);
 socketIOSetup(server);
