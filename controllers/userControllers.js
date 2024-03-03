@@ -1,99 +1,63 @@
-const documentModel = require("../models/documentModel");
-const userModel = require("../models/userModel.js");
-const emailAccessModel = require("../models/emailAccessModel");
 const bcrypt = require("bcrypt");
+const decodeToken = require("../utils/decodeToken");
+const userModel = require("../models/userModel.js");
+const documentModel = require("../models/documentModel");
 
 const getAllDocs = async (req, res) => {
-  try {
-    const userId = req.params.id;
+	try {
+		const user = decodeToken(req);
 
-    const ownedDocuments = await documentModel.find({
-      owner_id: userId,
-    });
+		const ownedDocuments = await documentModel.find({ owner_id: user.userId }, { content: 0, email_access: 0, link_access: 0 });
+		const sharedDocuments = await documentModel.find({ 'email_access.email': user.email }, { content: 0, email_access: 0, link_access: 0 });
 
-    // const sharedDocuments = await emailAccessModel.find({ });
+		const allDocuments = ownedDocuments.concat(sharedDocuments);
 
-    // const sharedDocuments = await documentModel.find({
-    //   mail_access_id: "admin141@gmail.com",
-    // });
+		if (!ownedDocuments && !sharedDocuments) {
+			return res.status(404).send({ success: false, message: "No user documents found" });
+		}
 
-    if (!ownedDocuments) {
-      return res
-        .status(404)
-        .send({ success: false, message: "No user documents found" });
-    }
+		return res.status(200).send({ success: true, message: "User documents get", allDocuments });
 
-    return res.status(200).send({
-      success: true,
-      message: "User documents get",
-      ownedDocuments,
-    });
-  } catch (error) {
-    console.log(error.message);
-    return res
-      .status(400)
-      .send({ success: false, message: "Error while getting user documents" });
-  }
+	} catch (error) {
+		return res.status(400).send({ success: false, message: "Error while getting user documents" });
+	}
 };
 
 const updateAccountController = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { username, email, image, password } = req.body;
-    const user = await userModel.findById(id);
+	try {
+		const { id } = req.params;
+		const { username, email, image, password } = req.body;
 
-    // if (password && password.length < 6) {
-    //   return res.json({ error: "Password is required and 6 character long" });
-    // }
+		const user = await userModel.findById(id);
 
-    const hashedPassword = password
-      ? await bcrypt.hash(password, 10)
-      : undefined;
-    const updatedUser = await userModel.findByIdAndUpdate(
-      id,
-      {
-        username: username || user.username,
-        password: hashedPassword || user.password,
-        email: email || user.email,
-        image: image || user.image,
-      },
-      { new: true }
-    );
-    res.status(200).send({
-      success: true,
-      message: "Profile updated successfully",
-      updatedUser,
-    });
-  } catch (error) {
-    console.log(error);
-    res.status(400).send({
-      success: false,
-      message: "Error while updating profile",
-      error,
-    });
-  }
+		const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
+		const updatedUser = await userModel.findByIdAndUpdate(
+			id,
+			{
+				username: username || user.username,
+				password: hashedPassword || user.password,
+				email: email || user.email,
+				image: image || user.image,
+			},
+			{ new: true }
+		);
+
+		res.status(200).send({ success: true, message: "Profile updated successfully", updatedUser });
+
+	} catch (error) {
+		res.status(400).send({ success: false, message: "Error while updating profile", error });
+	}
 };
 
 const deleteAccountController = async (req, res) => {
-  try {
-    await userModel.findByIdAndDelete(req.params.id);
+	try {
+		await userModel.findByIdAndDelete(req.params.id);
 
-    return res.status(200).send({
-      success: true,
-      message: "Account deleted",
-    });
-  } catch (error) {
-    console.log(error);
-    return res.status(400).send({
-      success: false,
-      message: "Error while deleting account",
-      error,
-    });
-  }
+		return res.status(200).send({ success: true, message: "Account deleted" });
+
+	} catch (error) {
+		return res.status(400).send({ success: false, message: "Error while deleting account", error });
+	}
 };
 
-module.exports = {
-  getAllDocs,
-  updateAccountController,
-  deleteAccountController,
-};
+module.exports = { getAllDocs, updateAccountController, deleteAccountController };
