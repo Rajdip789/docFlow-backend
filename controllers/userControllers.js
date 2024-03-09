@@ -51,7 +51,10 @@ const updateAccountController = async (req, res) => {
 
 const deleteAccountController = async (req, res) => {
 	try {
-		await userModel.findByIdAndDelete(req.params.id);
+		const userId = req.params.id;
+		
+		await userModel.findByIdAndDelete(userId);
+		await documentModel.deleteMany({ owner_id: userId });
 
 		return res.status(200).send({ success: true, message: "Account deleted" });
 

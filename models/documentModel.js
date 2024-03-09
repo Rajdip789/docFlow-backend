@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 
 const DocumentSchema = new mongoose.Schema(
 	{
+		_id: { type: mongoose.Schema.Types.ObjectId, required: true },
 		content: { type: Object, default: {} },
 		title: { type: String, default: "Untitled Doc" },
 		owner_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
