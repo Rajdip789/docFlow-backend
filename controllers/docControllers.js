@@ -34,7 +34,6 @@ const getDocInfoController = async (req, res) => {
 		return res.status(200).send({ success: true, message: "Document info fetched", docs: docs[0], users });
 
 	} catch (error) {
-		console.log(error);
 		return res.status(500).send({ success: false, message: "Error while fetching document", error });
 	}
 };
@@ -43,6 +42,7 @@ const getDocContent = async (req, res) => {
 	try {
 		const user = decodeToken(req);
 		const docId = req.params.id;
+		const path = req.query.pathname;
 
 		const isValidObjectId = ObjectId.isValid(docId);																																								
 
@@ -55,14 +55,13 @@ const getDocContent = async (req, res) => {
 		const isOwner = doc.owner_id.toString() === user.userId;
 		const emailExists = doc.email_access.find(({ email }) => email === user.email) !== undefined;
 
-		if(!isOwner && !emailExists) {
+		if(!isOwner && !emailExists && (!doc.link_access.is_active || path !== 'share')) {
 			return res.status(403).send({ success: false, message: "User have not sufficient privileges" });
 		}
-
+		
 		return res.status(200).send({ success: true, message: "Document content fetched", doc });
 
 	} catch (error) {
-		console.log(error);
 		return res.status(500).send({ success: false, message: "Error while geting document", error });
 	}
 };

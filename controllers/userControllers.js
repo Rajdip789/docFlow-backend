@@ -1,7 +1,15 @@
-const bcrypt = require("bcrypt");
 const decodeToken = require("../utils/decodeToken");
 const userModel = require("../models/userModel.js");
 const documentModel = require("../models/documentModel");
+const cloudinary = require('../config/cloudinaryConfig');
+const streamifier = require('streamifier');
+
+const get_public_id = (imageUrl) => {
+	let startIndex = imageUrl.lastIndexOf('/') + 1;
+	let endIndex = imageUrl.lastIndexOf('.');
+
+	return imageUrl.slice(startIndex, endIndex);
+}
 
 const getAllDocs = async (req, res) => {
 	try {
@@ -26,21 +34,45 @@ const getAllDocs = async (req, res) => {
 const updateAccountController = async (req, res) => {
 	try {
 		const { id } = req.params;
-		const { username, email, image, password } = req.body;
+		const { username, email } = req.body;
 
-		const user = await userModel.findById(id);
-
-		const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
-		const updatedUser = await userModel.findByIdAndUpdate(
+		let updatedUser = await userModel.findByIdAndUpdate(
 			id,
 			{
-				username: username || user.username,
-				password: hashedPassword || user.password,
-				email: email || user.email,
-				image: image || user.image,
+				username: username,
+				email: email,
 			},
 			{ new: true }
 		);
+
+		if(req.file !== undefined) {
+
+			const user = await userModel.findById(id);
+
+			if(user.image.startsWith('https://res.cloudinary.com/dpcqknniq')) {
+				const public_id = "docflow-user/" + get_public_id(user.image);
+				await cloudinary.uploader.destroy(public_id);	
+			}
+
+			const cld_upload_stream = cloudinary.uploader.upload_stream({  
+				folder: 'docflow-user'
+			}, async function(error, result) {
+
+				if(error) {
+					throw new Error("Upload failed");
+				}
+
+				updatedUser = await userModel.findByIdAndUpdate(
+					id, {
+						$set: {
+							image: result.secure_url
+						}
+					}
+				);
+			});
+
+			streamifier.createReadStream(req.file.buffer).pipe(cld_upload_stream);
+		}
 
 		res.status(200).send({ success: true, message: "Profile updated successfully", updatedUser });
 
