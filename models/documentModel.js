@@ -6,7 +6,6 @@ const DocumentSchema = new mongoose.Schema(
 		content: { type: Object, default: {} },
 		title: { type: String, default: "Untitled Doc" },
 		owner_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-		chat_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Chat' },
 		email_access: [
 			{
 			  email: { type: String, required: true },
