@@ -1,0 +1,25 @@
+version: "3.8"
+services:
+  app:
+    build: .
+    ports:
+      - 5000:5000
+    env_file:
+      - .env.docker
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo:6.0
+    restart: always
+    ports:
+      - 27018:27017
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: rajdip14  
+      MONGO_INITDB_ROOT_PASSWORD: RajS12345
+      MONGO_INITDB_DATABASE: docflow-db
+    volumes:
+      - mongo-data:/data/db 
+
+volumes:
+  mongo-data:
