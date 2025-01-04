@@ -1,4 +1,3 @@
-version: "3.8"
 services:
   app:
     build: .
@@ -8,7 +7,9 @@ services:
       - .env.docker
     depends_on:
       - mongo
-
+      - redis
+    restart: always
+      
   mongo:
     image: mongo:6.0
     restart: always
@@ -19,7 +20,18 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: RajS12345
       MONGO_INITDB_DATABASE: docflow-db
     volumes:
-      - mongo-data:/data/db 
+      - mongo-data:/data/db
+
+  redis:
+    image: redis:7.4.1
+    restart: always
+    ports:
+      - 6379:6379
+    volumes:
+      - redis-data:/data
 
 volumes:
   mongo-data:
+  redis-data:
+
+  
